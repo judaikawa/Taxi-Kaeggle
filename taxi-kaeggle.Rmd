@@ -14,11 +14,15 @@ library(geosphere)
 
 Dados:
 
-```{r}
-setwd("/Users/julianadaikawa/Downloads/all/")
-train = read_csv("train.zip")
-test = read_csv("test.zip")
+```{r, echo=FALSE, warning=FALSE, error=FALSE, message=FALSE}
+# train = read_csv("train.zip")
+# test = read_csv("test.zip")
+
+load("train")
+load("test")
+
 ```
+
 
 Separando data por mes, dia e hora (todos registros são de 2016)
 
@@ -30,16 +34,31 @@ train$Minute <- minute(train$pickup_datetime)
 train$Weekday <- weekdays(train$pickup_datetime)
 ```
 
-Distancia entre as coordenadas
+Distancia entre as coordenadas (Rodar uma única vez)
 
 ```{r}
-# Distance <- distm(train[,c("pickup_longitude", "pickup_latitude")], train[,c("dropoff_longitude", "dropoff_latitude")], fun = distHaversine)
-# Distance <- as.matrix(Distance)
-# train$Distance <- Distance[row(Distance) == col(Distance)] # aborta sessão R
+# # Distance <- distm(train[,c("pickup_longitude", "pickup_latitude")], train[,c("dropoff_longitude", "dropoff_latitude")], fun = distHaversine)
+# # Distance <- as.matrix(Distance)
+# # train$Distance <- Distance[row(Distance) == col(Distance)] # aborta sessão R
+# 
+# for(i in 122428:nrow(train)) {
+#   print(i)
+#   train$Distance[i] <- distm(train[i,c("pickup_longitude", "pickup_latitude")], train[i,c("dropoff_longitude", "dropoff_latitude")], fun = distHaversine)
+# }
+# 
+# # Novo dataset agora com a variável Distance
+# save(train, file = "train")
+# 
+# test$Distance <- NA
+# 
+# for(i in 1:nrow(test)) {
+#   print(i)
+#   test$Distance[i] <- distm(test[i,c("pickup_longitude", "pickup_latitude")], test[i,c("dropoff_longitude", "dropoff_latitude")], fun = distHaversine)
+# }
+# 
+# # Novo dataset agora com a variável Distance
+# save(test, file = "test")
 
-for(i in 1:nrow(train)) {
-  train$Distance[i] <- distm(train[i,c("pickup_longitude", "pickup_latitude")], train[i,c("dropoff_longitude", "dropoff_latitude")], fun = distHaversine)
-}
 
 ```
 
