@@ -9,6 +9,11 @@ Bibliotecas
 library(readr)
 library(lubridate)
 library(geosphere)
+library(MASS)
+library(MLmetrics)
+library(ggplot2)
+library(rpart)
+library(rattle)
 ```
 
 
@@ -24,14 +29,20 @@ load("test")
 ```
 
 
-Separando data por mes, dia e hora (todos registros são de 2016)
+Separando data por mes, dia e hora (todos registros são de 2016) (já feito)
 
 ```{r}
-train$Month <- month(train$pickup_datetime)
-train$Day <- day(train$pickup_datetime)
-train$Hour <- hour(train$pickup_datetime)
-train$Minute <- minute(train$pickup_datetime)
-train$Weekday <- weekdays(train$pickup_datetime)
+# train$Month <- month(train$pickup_datetime)
+# train$Day <- day(train$pickup_datetime)
+# train$Hour <- hour(train$pickup_datetime)
+# train$Minute <- minute(train$pickup_datetime)
+# train$Weekday <- weekdays(train$pickup_datetime)
+# 
+# test$Month <- month(test$pickup_datetime)
+# test$Day <- day(test$pickup_datetime)
+# test$Hour <- hour(test$pickup_datetime)
+# test$Minute <- minute(test$pickup_datetime)
+# test$Weekday <- weekdays(test$pickup_datetime)
 ```
 
 Distancia entre as coordenadas (Rodar uma única vez)
@@ -68,30 +79,141 @@ head(train)
 ```
 
 ```{r}
-test$Month <- month(test$pickup_datetime)
-test$Day <- day(test$pickup_datetime)
-test$Hour <- hour(test$pickup_datetime)
-test$Minute <- minute(test$pickup_datetime)
-test$Weekday <- weekdays(test$pickup_datetime)
+str(train)
+
+# Arrumando str
+train$vendor_id <- as.factor(train$vendor_id)
+train$passenger_count <- as.factor(train$passenger_count)
+train$store_and_fwd_flag <- as.factor(train$store_and_fwd_flag)
+train$Weekday <- as.factor(train$Weekday)
+
+test$vendor_id <- as.factor(test$vendor_id)
+test$passenger_count <- as.factor(test$passenger_count)
+test$store_and_fwd_flag <- as.factor(test$store_and_fwd_flag)
+test$Weekday <- as.factor(test$Weekday)
+
 ```
+
+Análise exploratória
+
+```{r}
+
+summary(train$passenger_count)
+
+ggplot(train, aes(passenger_count, Distance)) + geom_boxplot() + ylim(c(0,1000)) # Desconsiderar níveis 0, 7, 8 e 9
+
+train$passenger_count_2 <- ifelse(as.numeric(train$passenger_count)>6, 6, train$passenger_count)
+test$passenger_count_2 <- ifelse(as.numeric(test$passenger_count)>6, 6, test$passenger_count)
+
+train$passenger_count_2 <- as.factor(train$passenger_count_2)
+test$passenger_count_2 <- as.factor(test$passenger_count_2)
+
+summary(train$passenger_count_2)
+
+```
+
+
+Fórmula
 
 ```{r}
 formula <- trip_duration ~ Month +
   Day +
   Hour +
-  Minute +
+  #Minute +
   Weekday +
   vendor_id +
-  passenger_count +
-  pickup_longitude +
-  pickup_latitude + 
-  dropoff_longitude +
-  dropoff_latitude + 
-  store_and_fwd_flag
+  #passenger_count +
+  passenger_count_2 +
+  store_and_fwd_flag +
+  Distance
 ```
 
+Regressão Linear
 
 ```{r}
-lm <- lm()
+lm <- lm(formula, train)
+summary(lm)
 ```
+
+Árvore de decisão
+
+```{r}
+rpart <- rpart(formula, train)
+
+
+```
+
+
+Stepwise
+
+```{r}
+
+step <- stepAIC(lm)
+
+formula_step <- trip_duration ~ Month + Hour + Minute + Weekday + vendor_id + 
+    Distance
+
+
+
+```
+
+```{r}
+lm_step <- lm(formula_step, train)
+summary(lm_step)
+```
+
+Acurácia no dataset de treino
+
+```{r}
+
+pred <- predict(rpart, train)
+
+RMSLE(pred, train$trip_duration)
+
+```
+
+
+Submission
+
+```{r}
+
+pred <- predict(lm_step, test)
+
+submission <- c()
+submission$id <- test$id
+submission$trip_duration <- pred
+
+submission <- as.data.frame(submission)
+
+head(submission)
+
+```
+
+
+Submission em csv
+
+```{r}
+write.csv(submission, file = "submission2.csv", row.names = FALSE, quote = FALSE) # Score: 0.68645 Rank: #1070
+```
+
+
+
+
+Salvos
+
+```{r}
+
+# Tentativa 1: submission - todas as variáveis - Score: 0.68645 Rank: #1070
+# Tentativa 1: submission - variáveis stepwise - Score: 0.68676
+
+```
+
+
+
+
+
+
+
+
+
 
